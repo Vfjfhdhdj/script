@@ -7,198 +7,106 @@ local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Root = Character:WaitForChild("HumanoidRootPart")
 
--- Biến toggle
 local AutoFarm_Enabled = false
-local ESP_Enabled = false
 
--- [[ BẢNG CẤU HÌNH LEVEL QUÁI ]] --
-local MonsterLevelMap = {
-    ["Bandit"] = 5,
-    ["Monkey"] = 15,
-    ["Gorilla"] = 25,
-    ["Fishman Warrior"] = 50,
-    ["Fishman Commando"] = 75,
-    -- Thêm các quái khác vào đây...
+-- [[ DỮ LIỆU NHIỆM VỤ SƠ BỘ ]] --
+-- (Lưu ý: Đây là ví dụ, để hoàn hảo cần tọa độ chính xác của hàng trăm NPC)
+local QuestData = {
+    ["Bandit"] = {Level = 1, NPC = "Bandit Quest Giver", QuestName = "Bandits"},
+    ["Monkey"] = {Level = 15, NPC = "Monkey Quest Giver", QuestName = "Monkeys"},
 }
 
--- [[ HÀM TÌM QUÁI TỐT NHẤT ]] --
-local function GetBestEnemy()
-    local bestEnemy = nil
-    local currentLevel = LocalPlayer.Data.Level.Value
-    local minLevelDiff = math.huge
+-- [[ HÀM NHẬN NHIỆM VỤ ]] --
+local function GetQuest()
+    -- Logic này giả lập việc gọi hàm nhận quest của game
+    -- Trong các bản hack xịn, họ thường dùng RemoteEvent để nhận quest từ xa
+    local args = { [1] = "StartQuest", [2] = "Bandits", [3] = 1 }
+    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
+end
 
-    if Workspace:FindFirstChild("Enemies") then
-        for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
-            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                local monsterName = enemy.Name
-                local monsterLevel = MonsterLevelMap[monsterName]
-                
-                if monsterLevel and monsterLevel <= currentLevel then
-                    local levelDiff = currentLevel - monsterLevel
-                    if levelDiff < minLevelDiff then
-                        minLevelDiff = levelDiff
-                        bestEnemy = enemy
-                    end
-                end
+-- [[ HÀM TÌM QUÁI THEO NHIỆM VỤ ]] --
+local function GetTarget()
+    for _, v in pairs(Workspace.Enemies:GetChildren()) do
+        if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+            return v
+        end
+    end
+    return nil
+end
+
+-- [[ LOGIC BAY VÀ CHÉM ]] --
+RunService.Stepped:Connect(function()
+    if AutoFarm_Enabled then
+        local target = GetTarget()
+        if target then
+            -- Tắt va chạm để không bị vướng khi bay
+            for _, part in pairs(Character:GetChildren()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
             end
-        end
-    end
-    return bestEnemy
-end
-
--- [[ HÀM ESP TÌM TRÁI ]] --
-local function FindDevilFruits()
-    local fruits = {}
-    for _, v in pairs(Workspace:GetChildren()) do
-        if v:IsA("Model") and v.Name:find("Fruit") and v:FindFirstChild("Handle") then
-            table.insert(fruits, v)
-        end
-    end
-    return fruits
-end
-
-local function CreateESP(fruit)
-    local text = Drawing.new("Text")
-    text.Visible = false
-    text.Center = true
-    text.Outline = true
-    text.Font = 2
-    text.Size = 16
-    text.Color = Color3.fromRGB(255, 255, 0) -- Màu vàng cho nổi bật
-    
-    local connection
-    connection = RunService.RenderStepped:Connect(function()
-        if ESP_Enabled and fruit and fruit:FindFirstChild("Handle") then
-            local pos, onScreen = Camera:WorldToViewportPoint(fruit.Handle.Position)
-            if onScreen then
-                text.Text = fruit.Name
-                text.Position = Vector2.new(pos.X, pos.Y)
-                text.Visible = true
-            else
-                text.Visible = false
-            end
-        else
-            text.Visible = false
-        end
-    end)
-    
-    fruit.AncestryChanged:Connect(function()
-        text:Remove()
-        connection:Disconnect()
-    end)
-    
-    return text
-end
-
-local ESPs = {}
-local function UpdateESP()
-    for _, esp in pairs(ESPs) do
-        esp:Remove()
-    end
-    ESPs = {}
-    
-    if ESP_Enabled then
-        local fruits = FindDevilFruits()
-        for _, fruit in pairs(fruits) do
-            table.insert(ESPs, CreateESP(fruit))
-        end
-    end
-end
-
--- [[ LOGIC CHÍNH ]] --
-RunService.Heartbeat:Connect(function()
-    -- Logic Auto Farm
-    if AutoFarm_Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local enemy = GetBestEnemy()
-        if enemy then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
             
+            -- BAY TRÊN CAO: Cách con quái 5-7 đơn vị để nó không chém tới mình
+            Root.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+            
+            -- TỰ ĐỘNG CHÉM
             VirtualUser:CaptureController()
             VirtualUser:Button1Down(Vector2.new(0,0))
-            task.wait(0.1)
-            VirtualUser:Button1Up(Vector2.new(0,0))
         end
     end
-    
-    -- Logic Update ESP
-    if ESP_Enabled then
-        UpdateESP()
-    end
 end)
 
--- [[ TẠO MENU UI ]] --
+-- [[ GIAO DIỆN MENU NỔI ]] --
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
-ScreenGui.Name = "YutakjinGui"
 
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 160, 0, 150) -- Tăng kích thước menu
-Frame.Position = UDim2.new(0.5, -80, 0.4, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Active = true
-Frame.Draggable = true
-Frame.Parent = ScreenGui
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 160, 0, 100)
+MainFrame.Position = UDim2.new(0.5, -80, 0.4, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.Parent = MainFrame
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 25)
-Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Title.Text = "Yutakjin Menu"
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "YUTAKJIN V1"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.GothamBold
-Title.Parent = Frame
+Title.BackgroundTransparency = 1
+Title.Parent = MainFrame
 
--- Nút Auto Farm
-local ToggleFarm = Instance.new("TextButton")
-ToggleFarm.Size = UDim2.new(0.9, 0, 0, 30)
-ToggleFarm.Position = UDim2.new(0.05, 0, 0.25, 0)
-ToggleFarm.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
-ToggleFarm.Text = "Bật Auto Farm"
-ToggleFarm.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleFarm.Font = Enum.Font.GothamBold
-ToggleFarm.Parent = Frame
+local FarmBtn = Instance.new("TextButton")
+FarmBtn.Size = UDim2.new(0.8, 0, 0, 40)
+FarmBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
+FarmBtn.Text = "BẬT AUTO FARM"
+FarmBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
+FarmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FarmBtn.Parent = MainFrame
 
--- Nút ESP
-local ToggleESP = Instance.new("TextButton")
-ToggleESP.Size = UDim2.new(0.9, 0, 0, 30)
-ToggleESP.Position = UDim2.new(0.05, 0, 0.5, 0)
-ToggleESP.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-ToggleESP.Text = "Bật ESP Trái"
-ToggleESP.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleESP.Font = Enum.Font.GothamBold
-ToggleESP.Parent = Frame
+local btnCorner = Instance.new("UICorner")
+btnCorner.Parent = FarmBtn
 
-local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 20, 0, 20)
-CloseButton.Position = UDim2.new(1, -20, 0, 0)
-CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.Parent = Frame
-
--- [[ LOGIC NÚT BẤM ]] --
-ToggleFarm.MouseButton1Click:Connect(function()
+FarmBtn.MouseButton1Click:Connect(function()
     AutoFarm_Enabled = not AutoFarm_Enabled
-    ToggleFarm.Text = AutoFarm_Enabled and "Tắt Farm" or "Bật Auto Farm"
-    ToggleFarm.BackgroundColor3 = AutoFarm_Enabled and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 100)
-end)
-
-ToggleESP.MouseButton1Click:Connect(function()
-    ESP_Enabled = not ESP_Enabled
-    ToggleESP.Text = ESP_Enabled and "Tắt ESP Trái" or "Bật ESP Trái"
-    ToggleESP.BackgroundColor3 = ESP_Enabled and Color3.fromRGB(200, 150, 0) or Color3.fromRGB(100, 100, 100)
-    UpdateESP()
-end)
-
-CloseButton.MouseButton1Click:Connect(function()
-    Frame.Visible = not Frame.Visible
-end)
-
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.M then
-        Frame.Visible = not Frame.Visible
+    if AutoFarm_Enabled then
+        FarmBtn.Text = "TẮT FARM"
+        FarmBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        GetQuest() -- Thử nhận quest khi bật
+    else
+        FarmBtn.Text = "BẬT AUTO FARM"
+        FarmBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
     end
 end)
 
-print("yutakjin Script Loaded!")
+-- Nhấn M để ẩn menu
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.M then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+print("Script by yutakjin loaded!")
