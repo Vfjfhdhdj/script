@@ -1,6 +1,6 @@
 -- [[V1]] --
-local URL_RAW_KEY = "https://raw.githubusercontent.com/Vfjfhdhdj/nd/refs/heads/main/key.txt" -- Link Raw chứa Key của bạn
-local MY_GETKEY_LINK = "https://link4m.com/EOmecR" -- Link để user lấy key
+local URL_RAW_KEY = "https://raw.githubusercontent.com/Vfjfhdhdj/nd/refs/heads/main/key.txt"
+local MY_GETKEY_LINK = "https://link4m.com/EOmecR" -- link rút gọn
 local SCRIPT_CHINH = "https://raw.githubusercontent.com/Vfjfhdhdj/script/main/script.lua"
 
 -- [[ui]] --
