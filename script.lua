@@ -1,20 +1,54 @@
--- Script ESP Trái Ác Quỷ & Auto Farm cho Blox Fruits (Delta Executor)
---soi làm gì--
+-- Tác giả: yutakjin
 
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 -- Biến toggle
-local ESP_Enabled = false
 local AutoFarm_Enabled = false
+local ESP_Enabled = false
 
--- [[ HÀM ESP ]] --
+-- [[ BẢNG CẤU HÌNH LEVEL QUÁI ]] --
+local MonsterLevelMap = {
+    ["Bandit"] = 5,
+    ["Monkey"] = 15,
+    ["Gorilla"] = 25,
+    ["Fishman Warrior"] = 50,
+    ["Fishman Commando"] = 75,
+    -- Thêm các quái khác vào đây...
+}
+
+-- [[ HÀM TÌM QUÁI TỐT NHẤT ]] --
+local function GetBestEnemy()
+    local bestEnemy = nil
+    local currentLevel = LocalPlayer.Data.Level.Value
+    local minLevelDiff = math.huge
+
+    if Workspace:FindFirstChild("Enemies") then
+        for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                local monsterName = enemy.Name
+                local monsterLevel = MonsterLevelMap[monsterName]
+                
+                if monsterLevel and monsterLevel <= currentLevel then
+                    local levelDiff = currentLevel - monsterLevel
+                    if levelDiff < minLevelDiff then
+                        minLevelDiff = levelDiff
+                        bestEnemy = enemy
+                    end
+                end
+            end
+        end
+    end
+    return bestEnemy
+end
+
+-- [[ HÀM ESP TÌM TRÁI ]] --
 local function FindDevilFruits()
     local fruits = {}
     for _, v in pairs(Workspace:GetChildren()) do
@@ -32,11 +66,11 @@ local function CreateESP(fruit)
     text.Outline = true
     text.Font = 2
     text.Size = 16
-    text.Color = Color3.fromRGB(255, 255, 255)
+    text.Color = Color3.fromRGB(255, 255, 0) -- Màu vàng cho nổi bật
     
     local connection
     connection = RunService.RenderStepped:Connect(function()
-        if ESP_Enabled and fruit and fruit:FindFirstChild("Handle") and fruit.Handle.Position then
+        if ESP_Enabled and fruit and fruit:FindFirstChild("Handle") then
             local pos, onScreen = Camera:WorldToViewportPoint(fruit.Handle.Position)
             if onScreen then
                 text.Text = fruit.Name
@@ -73,55 +107,36 @@ local function UpdateESP()
     end
 end
 
+-- [[ LOGIC CHÍNH ]] --
 RunService.Heartbeat:Connect(function()
+    -- Logic Auto Farm
+    if AutoFarm_Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local enemy = GetBestEnemy()
+        if enemy then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+            
+            VirtualUser:CaptureController()
+            VirtualUser:Button1Down(Vector2.new(0,0))
+            task.wait(0.1)
+            VirtualUser:Button1Up(Vector2.new(0,0))
+        end
+    end
+    
+    -- Logic Update ESP
     if ESP_Enabled then
         UpdateESP()
     end
 end)
 
--- [[ HÀM AUTO FARM ]] --
-local function GetClosestEnemy()
-    local closestEnemy = nil
-    local shortestDistance = math.huge
-    
-    if Workspace:FindFirstChild("Enemies") then
-        for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
-            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - enemy.HumanoidRootPart.Position).Magnitude
-                if distance < shortestDistance then
-                    closestEnemy = enemy
-                    shortestDistance = distance
-                end
-            end
-        end
-    end
-    return closestEnemy
-end
-
-RunService.Heartbeat:Connect(function()
-    if AutoFarm_Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local enemy = GetClosestEnemy()
-        if enemy then
-            -- Teleport đến quái
-            LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-            
-            -- Tấn công
-            VirtualUser:CaptureController()
-            VirtualUser:Button1Down(Vector2.new(0,0))
-        end
-    end
-end)
-
--- [[ TẠO MENU ]] --
+-- [[ TẠO MENU UI ]] --
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
-ScreenGui.Name = "v1" -- Tên UI
+ScreenGui.Name = "YutakjinGui"
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 160, 0, 140) -- Tăng chiều cao để chứa nút farm
+Frame.Size = UDim2.new(0, 160, 0, 150) -- Tăng kích thước menu
 Frame.Position = UDim2.new(0.5, -80, 0.4, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.BorderSizePixel = 0
 Frame.Active = true
 Frame.Draggable = true
 Frame.Parent = ScreenGui
@@ -129,28 +144,30 @@ Frame.Parent = ScreenGui
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 25)
 Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Title.Text = "X-Script V1"
+Title.Text = "Yutakjin Menu"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold
 Title.Parent = Frame
 
+-- Nút Auto Farm
+local ToggleFarm = Instance.new("TextButton")
+ToggleFarm.Size = UDim2.new(0.9, 0, 0, 30)
+ToggleFarm.Position = UDim2.new(0.05, 0, 0.25, 0)
+ToggleFarm.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
+ToggleFarm.Text = "Bật Auto Farm"
+ToggleFarm.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleFarm.Font = Enum.Font.GothamBold
+ToggleFarm.Parent = Frame
+
 -- Nút ESP
 local ToggleESP = Instance.new("TextButton")
 ToggleESP.Size = UDim2.new(0.9, 0, 0, 30)
-ToggleESP.Position = UDim2.new(0.05, 0, 0.25, 0)
+ToggleESP.Position = UDim2.new(0.05, 0, 0.5, 0)
 ToggleESP.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 ToggleESP.Text = "Bật ESP Trái"
 ToggleESP.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleESP.Font = Enum.Font.GothamBold
 ToggleESP.Parent = Frame
-
--- Nút Farm
-local ToggleFarm = Instance.new("TextButton")
-ToggleFarm.Size = UDim2.new(0.9, 0, 0, 30)
-ToggleFarm.Position = UDim2.new(0.05, 0, 0.52, 0)
-ToggleFarm.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-ToggleFarm.Text = "Bật Auto Farm"
-ToggleFarm.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleFarm.Parent = Frame
 
 local CloseButton = Instance.new("TextButton")
 CloseButton.Size = UDim2.new(0, 20, 0, 20)
@@ -161,29 +178,27 @@ CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseButton.Parent = Frame
 
 -- [[ LOGIC NÚT BẤM ]] --
+ToggleFarm.MouseButton1Click:Connect(function()
+    AutoFarm_Enabled = not AutoFarm_Enabled
+    ToggleFarm.Text = AutoFarm_Enabled and "Tắt Farm" or "Bật Auto Farm"
+    ToggleFarm.BackgroundColor3 = AutoFarm_Enabled and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 100)
+end)
 
 ToggleESP.MouseButton1Click:Connect(function()
     ESP_Enabled = not ESP_Enabled
     ToggleESP.Text = ESP_Enabled and "Tắt ESP Trái" or "Bật ESP Trái"
-    ToggleESP.BackgroundColor3 = ESP_Enabled and Color3.fromRGB(0, 170, 127) or Color3.fromRGB(100, 100, 100)
+    ToggleESP.BackgroundColor3 = ESP_Enabled and Color3.fromRGB(200, 150, 0) or Color3.fromRGB(100, 100, 100)
     UpdateESP()
-end)
-
-ToggleFarm.MouseButton1Click:Connect(function()
-    AutoFarm_Enabled = not AutoFarm_Enabled
-    ToggleFarm.Text = AutoFarm_Enabled and "Tắt Farm" or "Bật Auto Farm"
-    ToggleFarm.BackgroundColor3 = AutoFarm_Enabled and Color3.fromRGB(0, 170, 127) or Color3.fromRGB(100, 100, 100)
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
     Frame.Visible = not Frame.Visible
 end)
 
--- Hotkey 'M'
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.M then
         Frame.Visible = not Frame.Visible
     end
 end)
 
-print("X-Script V1 Loaded!")
+print("yutakjin Script Loaded!")
