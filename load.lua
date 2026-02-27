@@ -1,9 +1,9 @@
--- [[ CẤU HÌNH ]] --
+-- [[V1]] --
 local URL_RAW_KEY = "https://raw.githubusercontent.com/Vfjfhdhdj/nd/refs/heads/main/key.txt" -- Link Raw chứa Key của bạn
 local MY_GETKEY_LINK = "https://link4m.com/EOmecR" -- Link để user lấy key
 local SCRIPT_CHINH = "https://raw.githubusercontent.com/Vfjfhdhdj/script/main/script.lua"
 
--- [[ GIAO DIỆN UI ]] --
+-- [[ui]] --
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local UICorner = Instance.new("UICorner")
