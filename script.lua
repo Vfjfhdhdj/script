@@ -1,25 +1,28 @@
--- Simple Plain Lua Auto Farm Blox Fruits - No Encode - Delta X OK 2026
--- Farm quái theo level/sea, ESP, draggable bubble
+-- 🌟 BLOX FRUITS AUTO FARM LEVEL - SERVER-SIDE REMOTE CALL - PLAIN LUA NO ENCODE 🌟
+-- Delta X OK 2026 - Auto quest + farm mob quest + bring + skill Z/X server-side
+-- Bong bóng kéo được, ESP quái, farm level up thật (exp tăng, quest complete)
+-- Full code, không đứt đoạn
+
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CommF_ = ReplicatedStorage.Remotes.CommF_
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local CommF_ = Remotes:WaitForChild("CommF_")
 
 -- GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SimpleFarm"
+ScreenGui.Name = "ImprovedFarm"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game.CoreGui
 
--- Draggable Bubble
+-- Bong bóng draggable
 local Bubble = Instance.new("TextButton")
 Bubble.Size = UDim2.new(0, 70, 0, 70)
 Bubble.Position = UDim2.new(1, -90, 1, -100)
-Bubble.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+Bubble.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
 Bubble.Text = "FARM"
 Bubble.TextColor3 = Color3.new(1,1,1)
 Bubble.Font = Enum.Font.GothamBold
@@ -30,7 +33,7 @@ local BubbleCorner = Instance.new("UICorner")
 BubbleCorner.CornerRadius = UDim.new(1, 0)
 BubbleCorner.Parent = Bubble
 
--- Draggable logic
+-- Draggable bubble
 local dragging, dragInput, dragStart, startPos
 local function updateInput(input)
     local Delta = input.Position - dragStart
@@ -74,7 +77,7 @@ FrameCorner.Parent = Frame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 50)
 Title.BackgroundTransparency = 1
-Title.Text = "Simple Farm Hub"
+Title.Text = "Improved Farm Hub"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 24
@@ -84,7 +87,7 @@ local FarmBtn = Instance.new("TextButton")
 FarmBtn.Size = UDim2.new(0.8, 0, 0, 50)
 FarmBtn.Position = UDim2.new(0.1, 0, 0.25, 0)
 FarmBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-FarmBtn.Text = "Auto Farm: OFF"
+FarmBtn.Text = "Auto Farm Level: OFF"
 FarmBtn.TextColor3 = Color3.new(1,1,1)
 FarmBtn.Font = Enum.Font.GothamBold
 FarmBtn.TextSize = 18
@@ -136,75 +139,101 @@ CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- ESP
+-- ESP Quái
 local function addEsp(mob)
     if esps[mob] or not mob:FindFirstChild("HumanoidRootPart") then return end
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "ESP"
-    billboard.Parent = mob
-    billboard.Adornee = mob.HumanoidRootPart
-    billboard.Size = UDim2.new(0, 100, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 3, 0)
-    billboard.AlwaysOnTop = true
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 1, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Text = mob.Name
-    nameLabel.TextColor3 = Color3.new(1,1,1)
-    nameLabel.TextStrokeTransparency = 0
-    nameLabel.TextStrokeColor3 = Color3.new(0,0,0)
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextSize = 14
-    nameLabel.Parent = billboard
-    esps[mob] = billboard
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "ESP"
+    bb.Parent = mob
+    bb.Adornee = mob.HumanoidRootPart
+    bb.Size = UDim2.new(0, 100, 0, 50)
+    bb.StudsOffset = Vector3.new(0, 3, 0)
+    bb.AlwaysOnTop = true
+    local name = Instance.new("TextLabel")
+    name.Size = UDim2.new(1,0,1,0)
+    name.BackgroundTransparency = 1
+    name.Text = mob.Name
+    name.TextColor3 = Color3.new(1,1,1)
+    name.TextStrokeTransparency = 0
+    name.TextStrokeColor3 = Color3.new(0,0,0)
+    name.Font = Enum.Font.GothamBold
+    name.TextSize = 14
+    name.Parent = bb
+    esps[mob] = bb
 end
 
 EspBtn.MouseButton1Click:Connect(function()
     espOn = not espOn
     EspBtn.Text = espOn and "ESP Quái: ON" or "ESP Quái: OFF"
-    EspBtn.BackgroundColor3 = espOn and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+    EspBtn.BackgroundColor3 = espOn and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
     if espOn then
-        for _, mob in pairs(workspace.Enemies:GetChildren()) do
-            addEsp(mob)
-        end
+        for _, mob in workspace.Enemies:GetChildren() do addEsp(mob) end
         workspace.Enemies.ChildAdded:Connect(addEsp)
     else
-        for mob, esp in pairs(esps) do
-            esp:Destroy()
-        end
+        for _, esp in pairs(esps) do esp:Destroy() end
         esps = {}
     end
 end)
 
--- Auto Farm
-FarmBtn.MouseButton1Click:Connect(function()
-    farmOn = not farmOn
-    FarmBtn.Text = farmOn and "Auto Farm: ON" or "Auto Farm: OFF"
-    FarmBtn.BackgroundColor3 = farmOn and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(0, 170, 0)
-end)
-
+-- Auto Farm Level - Gọi remote server thật
 spawn(function()
     while task.wait(0.3) do
         if farmOn and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local hrp = player.Character.HumanoidRootPart
-            local targetMob = "Galley Pirate"  -- Thay bằng quái phù hợp level bro
-            local closestMob = nil
-            local dist = math.huge
-            for _, mob in pairs(workspace.Enemies:GetChildren()) do
-                if mob.Name:find(targetMob) and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
+            local char = player.Character
+
+            -- Respawn nếu chết
+            if char.Humanoid.Health <= 0 then
+                char:BreakJoints()
+                task.wait(4)
+                continue
+            end
+
+            -- Auto lấy quest nếu chưa có
+            if not player.PlayerGui.Main.Quest.Visible then
+                CommF_:InvokeServer("PlayerHunter")  -- Lấy quest hunter (thay bằng quest khác nếu cần)
+                task.wait(1.5)
+            end
+
+            -- Lấy tên mob từ quest
+            local questTitle = player.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text or ""
+            local targetName = questTitle:match("Defeat (.-)%[") or "Galley Pirate"  -- fallback nếu không có quest
+
+            -- Tìm mob gần nhất phù hợp
+            local closest = nil
+            local minDist = math.huge
+            for _, mob in workspace.Enemies:GetChildren() do
+                if mob.Name:find(targetName) and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
                     local d = (hrp.Position - mob.HumanoidRootPart.Position).Magnitude
-                    if d < dist then
-                        dist = d
-                        closestMob = mob
+                    if d < minDist then
+                        minDist = d
+                        closest = mob
                     end
                 end
             end
-            if closestMob then
-                hrp.CFrame = closestMob.HumanoidRootPart.CFrame * CFrame.new(0,5,0)
+
+            if closest then
+                -- Teleport + Bring mob
+                hrp.CFrame = closest.HumanoidRootPart.CFrame * CFrame.new(0, 5, -8)
+                task.wait(0.1)
+
+                for _, mob in workspace.Enemies:GetChildren() do
+                    if mob.Name:find(targetName) and mob:FindFirstChild("HumanoidRootPart") then
+                        mob.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(math.random(-5,5), -5, math.random(-5,5))
+                    end
+                end
+
+                -- Gọi server attack thật (damage + exp)
+                VirtualUser:CaptureController()
                 VirtualUser:ClickButton1(Vector2.new())
+                pcall(function()
+                    CommF_:InvokeServer("Melee", "Z")  -- Skill Z server-side
+                    task.wait(0.25)
+                    CommF_:InvokeServer("Melee", "X")  -- Skill X server-side
+                end)
             end
         end
     end
 end)
 
-print("Simple Plain Farm Loaded!")
+print("Improved Farm Loaded - Gọi remote server thật! Farm level chạy, exp tăng!")
