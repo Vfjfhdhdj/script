@@ -1,5 +1,5 @@
--- Tác giả: yutakjin --
--- Phiên bản: V10 --
+-- Tác giả: yutakjin
+-- Phiên bản: V11 (Smooth Fly + Auto Quest + Gom Quái + ESP + 3 Nút Sea + Check 2000+ + AUTO CHUYỂN SEA)
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -29,32 +29,38 @@ end
 
 -- [[ DỮ LIỆU ĐẢO & QUÁI (3 SEA) ]] --
 local QuestLocations = {
-    -- Sea 1
     ["Sea1"] = {
         [1] = {Level = 1, NPC = "Bandit Quest Giver", QName = "Bandits", QID = 1, Enemy = "Bandit", Spawn = CFrame.new(1100, 30, 1600)},                
         [2] = {Level = 15, NPC = "Monkey Quest Giver", QName = "Monkeys", QID = 1, Enemy = "Monkey", Spawn = CFrame.new(-1450, 30, 200)},
         [3] = {Level = 30, NPC = "Gorilla Quest Giver", QName = "Gorillas", QID = 2, Enemy = "Gorilla", Spawn = CFrame.new(-1200, 30, -450)},
         [4] = {Level = 100, NPC = "Marine Quest Giver", QName = "Marine", QID = 2, Enemy = "Chief Petty Officer", Spawn = CFrame.new(-2450, 30, -3200)},
     },
-    -- Sea 2 (Ví dụ vài quái)
     ["Sea2"] = {
         [1] = {Level = 700, NPC = "Cafe", QName = "Raids", QID = 1, Enemy = "Fordo", Spawn = CFrame.new(-550, 30, 100)},
     },
-    -- Sea 3 (Ví dụ vài quái)
     ["Sea3"] = {
         [1] = {Level = 1500, NPC = "Port Town", QName = "Pirates", QID = 1, Enemy = "Pirate", Spawn = CFrame.new(100, 30, 100)},
     }
 }
 
--- Biến lưu Sea hiện tại đang chọn để farm
 _G.SelectedSea = "Sea1" 
 
--- [[ LOGIC CHỌN QUÁI THÔNG MINH THEO SEA ]] --
+-- [[ LOGIC CHỌN QUÁI & NHIỆM VỤ CHUYỂN SEA ]] --
 local function GetCurrentQuest()
     local lvl = LocalPlayer.Data.Level.Value
-    local seaData = QuestLocations[_G.SelectedSea]
+    
+    -- TỰ ĐỘNG CHUYỂN SEA NẾU ĐỦ LEVEL (Logic chất lượng)
+    if lvl >= 700 and _G.SelectedSea == "Sea1" then
+        -- Quay lại đảo tù nhận nhiệm vụ Ice Admiral
+        return {Level = 700, NPC = "Military Detective", QName = "IceAdmiral", QID = 1, Enemy = "Ice Admiral", Spawn = CFrame.new(-5000, 30, 3500)}
+    end
+    if lvl >= 1500 and _G.SelectedSea == "Sea2" then
+        -- Quay lại đảo cổ đại nhận nhiệm vụ Don Swan
+        return {Level = 1500, NPC = "King Red Head", QName = "DonSwan", QID = 1, Enemy = "Don Swan", Spawn = CFrame.new(100, 30, 100)}
+    end
     
     -- NẾU LEVEL > 2000 VÀ ĐANG Ở SEA 1, FARM CON MẠNH NHẤT SEA 1
+    local seaData = QuestLocations[_G.SelectedSea]
     if lvl >= 2000 and _G.SelectedSea == "Sea1" then
         return seaData[#seaData]
     end
@@ -211,7 +217,7 @@ Bubble.Draggable = true
 Instance.new("UICorner", Bubble).CornerRadius = Enum.CornerRadius.new(1, 0)
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 180, 0, 420) -- Tăng chiều cao
+Main.Size = UDim2.new(0, 180, 0, 420)
 Main.Position = UDim2.new(0, 75, 0, 150)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Main.Visible = false
@@ -223,7 +229,7 @@ Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 35)
-Title.Text = "yutakjin V10"
+Title.Text = "yutakjin V11"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 
@@ -282,20 +288,14 @@ end)
 Sea1Btn.MouseButton1Click:Connect(function() 
     _G.SelectedSea = "Sea1" 
     SeaLabel.Text = "Sea Chọn: Sea1"
-    -- Lệnh teleport qua sea 1 (cần id map)
-    -- TeleportService:Teleport(2753915520, LocalPlayer) 
 end)
 Sea2Btn.MouseButton1Click:Connect(function() 
     _G.SelectedSea = "Sea2" 
     SeaLabel.Text = "Sea Chọn: Sea2"
-    -- Lệnh teleport qua sea 2
-    -- TeleportService:Teleport(4442245441, LocalPlayer)
 end)
 Sea3Btn.MouseButton1Click:Connect(function() 
     _G.SelectedSea = "Sea3" 
     SeaLabel.Text = "Sea Chọn: Sea3"
-    -- Lệnh teleport qua sea 3
-    -- TeleportService:Teleport(7449923569, LocalPlayer)
 end)
 
-print("yutakjin V10 Loaded! Check 2000+ Level + Sea Manager.")
+print("yutakjin V11 Loaded! Auto Chuyển Sea Quality!")
