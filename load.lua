@@ -61,7 +61,7 @@ CheckBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
 CheckBtn.Position = UDim2.new(0.1, 0, 0.6, 0)
 CheckBtn.Size = UDim2.new(0.38, 0, 0, 35)
 CheckBtn.Font = Enum.Font.GothamBold
-CheckBtn.Text = "VÀO GAME"
+CheckBtn.Text = "load"
 CheckBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CheckBtn.TextSize = 12
 
@@ -74,7 +74,7 @@ CopyBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
 CopyBtn.Position = UDim2.new(0.52, 0, 0.6, 0)
 CopyBtn.Size = UDim2.new(0.38, 0, 0, 35)
 CopyBtn.Font = Enum.Font.GothamBold
-CopyBtn.Text = "LẤY KEY"
+CopyBtn.Text = "copy link"
 CopyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CopyBtn.TextSize = 12
 
@@ -88,7 +88,7 @@ CopyBtn.MouseButton1Click:Connect(function()
         setclipboard(MY_GETKEY_LINK)
         CopyBtn.Text = "ĐÃ COPY!"
         wait(1.5)
-        CopyBtn.Text = "LẤY KEY"
+        CopyBtn.Text = "copy link"
     else
         CopyBtn.Text = "LỖI COPY"
     end
@@ -108,7 +108,7 @@ CheckBtn.MouseButton1Click:Connect(function()
         serverKey = serverKey:gsub("%s+", "") -- Loại bỏ khoảng trắng/xuống dòng
         
         if input == serverKey then
-            CheckBtn.Text = "OK! LOADING..."
+            CheckBtn.Text = "OK!"
             CheckBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
             wait(1)
             ScreenGui:Destroy() -- Xóa UI Get Key
@@ -119,19 +119,19 @@ CheckBtn.MouseButton1Click:Connect(function()
             end)
             
             if not runScript then
-                warn("Lỗi khi tải Script chính. Kiểm tra lại link GitHub của script!")
+                warn("Lỗi khi load raw")
             end
         else
-            CheckBtn.Text = "SAI KEY!"
+            CheckBtn.Text = "sai key"
             CheckBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
             wait(1.5)
-            CheckBtn.Text = "VÀO GAME"
+            CheckBtn.Text = "đang load"
             CheckBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
         end
     else
         CheckBtn.Text = "LỖI KẾT NỐI"
         warn("Không thể lấy dữ liệu từ GitHub. Kiểm tra lại link Raw!")
         wait(1.5)
-        CheckBtn.Text = "VÀO GAME"
+        CheckBtn.Text = ""
     end
 end)
