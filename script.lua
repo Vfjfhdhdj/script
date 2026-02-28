@@ -1,162 +1,114 @@
 -- Tác giả: yutakjin
--- Chức năng: Auto Quest, Select Level Farm, Display Stats (Level, Sea, Exp)
+-- Chức năng: Fix giật lag, Auto Quest, Stats, Smooth Farm
 
 local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
-local Workspace = game:GetService("Workspace")
-local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Root = Character:WaitForChild("HumanoidRootPart")
-
--- Biến cấu hình
 local AutoFarm_Enabled = false
-local Selected_Level_Farm = "Bandit" -- Mặc định
+local Selected_Enemy = "Bandit" -- Bạn có thể đổi tên quái ở đây
 
--- Dữ liệu quái và level (Bạn có thể thêm vào list này)
-local FarmList = {
-    ["Bandit"] = {Level = 1, QuestNPC = "Bandit Quest Giver", QuestName = "Bandits", QuestID = 1},
-    ["Monkey"] = {Level = 15, QuestNPC = "Monkey Quest Giver", QuestName = "Monkeys", QuestID = 1},
-    ["Gorilla"] = {Level = 25, QuestNPC = "Gorilla Quest Giver", QuestName = "Gorillas", QuestID = 2},
-}
-
--- Hàm nhận diện Sea hiện tại
-local function GetCurrentSea()
-    local placeId = game.PlaceId
-    if placeId == 2753915520 then return "Sea 1"
-    elseif placeId == 4442245441 then return "Sea 2"
-    elseif placeId == 7449923569 then return "Sea 3"
-    else return "Unknown" end
+-- [[ HÀM NHẬN QUEST TỪ XA ]] --
+local function GetQuest()
+    -- Tự động nhận quest tùy theo quái đang chọn (Ví dụ cho Sea 1)
+    local args = { [1] = "StartQuest", [2] = "Bandits", [3] = 1 }
+    if Selected_Enemy == "Monkey" then args[2] = "Monkeys" args[3] = 1 end
+    if Selected_Enemy == "Gorilla" then args[2] = "Gorillas" args[3] = 2 end
+    
+    ReplicatedStorage.Remotes.CommF_:InvokeServer(unpack(args))
 end
 
--- Hàm nhận nhiệm vụ từ xa
-local function AutoGetQuest()
-    local data = FarmList[Selected_Level_Farm]
-    if data then
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", data.QuestName, data.QuestID)
-    end
-end
-
--- Hàm tìm quái mục tiêu
-local function GetTarget()
+-- [[ HÀM TÌM QUÁI ]] --
+local function GetEnemy()
     for _, v in pairs(Workspace.Enemies:GetChildren()) do
-        if v.Name == Selected_Level_Farm and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+        if v.Name == Selected_Enemy and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
             return v
         end
     end
     return nil
 end
 
--- Logic Auto Farm Bay trên cao
-RunService.Stepped:Connect(function()
-    if AutoFarm_Enabled then
-        local target = GetTarget()
-        
-        -- Nếu chưa có nhiệm vụ thì tự nhận
-        if not LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") then
-            AutoGetQuest()
-        end
-
-        if target and target:FindFirstChild("HumanoidRootPart") then
-            -- Tắt va chạm
-            for _, part in pairs(Character:GetChildren()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
+-- [[ LOGIC FARM MƯỢT - FIX GIẬT ]] --
+spawn(function()
+    while true do
+        task.wait() -- Độ trễ cực nhỏ để giảm giật
+        if AutoFarm_Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local target = GetEnemy()
+            
+            -- Kiểm tra nhiệm vụ
+            if not LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") then
+                GetQuest()
             end
-            
-            -- Bay trên đầu quái 7 đơn vị để né skill
-            Root.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0) * CFrame.Angles(math.rad(-90), 0, 0)
-            
-            -- Tấn công
-            VirtualUser:CaptureController()
-            VirtualUser:Button1Down(Vector2.new(0,0))
+
+            if target and target:FindFirstChild("HumanoidRootPart") then
+                -- Tắt va chạm để bay xuyên vật cản
+                for _, p in pairs(LocalPlayer.Character:GetChildren()) do
+                    if p:IsA("BasePart") then p.CanCollide = false end
+                end
+
+                -- DI CHUYỂN MƯỢT: Giữ khoảng cách 6 đơn vị trên đầu quái
+                -- Dùng CFrame trực tiếp nhưng có task.wait giúp ổn định vị trí
+                LocalPlayer.Character.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 6, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+
+                -- TỰ ĐỘNG CHÉM (Cần cầm vũ khí)
+                VirtualUser:CaptureController()
+                VirtualUser:Button1Down(Vector2.new(0,0))
+            end
         end
     end
 end)
 
--- [[ GIAO DIỆN UI CHUYÊN NGHIỆP ]] --
+-- [[ GIAO DIỆN MENU ]] --
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
-ScreenGui.Name = "YutakjinV2"
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 220, 0, 250)
-MainFrame.Position = UDim2.new(0.5, -110, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
-
-local UICorner = Instance.new("UICorner")
-UICorner.Parent = MainFrame
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 180, 0, 180)
+Main.Position = UDim2.new(0.5, -90, 0.4, 0)
+Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Main.Draggable = true
+Main.Active = true
+Main.Parent = ScreenGui
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 35)
-Title.Text = "YUTAKJIN V2 - AUTO FARM"
-Title.TextColor3 = Color3.fromRGB(255, 215, 0)
-Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-Title.Parent = MainFrame
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "YUTAKJIN V3 - FIX LAG"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Title.Parent = Main
 
--- Hiển thị thông số (Stats)
-local StatsLabel = Instance.new("TextLabel")
-StatsLabel.Size = UDim2.new(0.9, 0, 0, 60)
-StatsLabel.Position = UDim2.new(0.05, 0, 0.15, 0)
-StatsLabel.BackgroundTransparency = 1
-StatsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-StatsLabel.TextSize = 14
-StatsLabel.TextXAlignment = Enum.TextXAlignment.Left
-StatsLabel.Parent = MainFrame
+local Stats = Instance.new("TextLabel")
+Stats.Size = UDim2.new(1, 0, 0, 60)
+Stats.Position = UDim2.new(0, 0, 0.2, 0)
+Stats.BackgroundTransparency = 1
+Stats.TextColor3 = Color3.fromRGB(0, 255, 150)
+Stats.TextSize = 13
+Stats.Parent = Main
 
--- Nút Bật/Tắt Farm
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(0.9, 0, 0, 40)
-ToggleBtn.Position = UDim2.new(0.05, 0, 0.45, 0)
-ToggleBtn.Text = "BẮT ĐẦU FARM"
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBtn.Parent = MainFrame
+local FarmBtn = Instance.new("TextButton")
+FarmBtn.Size = UDim2.new(0.8, 0, 0, 40)
+FarmBtn.Position = UDim2.new(0.1, 0, 0.65, 0)
+FarmBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+FarmBtn.Text = "BẬT FARM"
+FarmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FarmBtn.Parent = Main
 
--- Danh sách chọn quái (Ví dụ đơn giản)
-local SelectBtn = Instance.new("TextButton")
-SelectBtn.Size = UDim2.new(0.9, 0, 0, 30)
-SelectBtn.Position = UDim2.new(0.05, 0, 0.65, 0)
-SelectBtn.Text = "Chọn Quái: " .. Selected_Level_Farm
-SelectBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-SelectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SelectBtn.Parent = MainFrame
-
--- Cập nhật Stats liên tục
+-- Cập nhật thông số Level/Exp
 spawn(function()
-    while wait(1) do
+    while task.wait(1) do
         local lvl = LocalPlayer.Data.Level.Value
         local exp = LocalPlayer.Data.Exp.Value
-        local maxExp = LocalPlayer.Data.MaxExp.Value
-        StatsLabel.Text = string.format("Level: %d\nSea: %s\nExp: %d/%d", lvl, GetCurrentSea(), exp, maxExp)
+        Stats.Text = "Level: "..lvl.."\nExp: "..exp.."\nStatus: "..(AutoFarm_Enabled and "Running" or "Idle")
     end
 end)
 
--- Chức năng nút
-ToggleBtn.MouseButton1Click:Connect(function()
+FarmBtn.MouseButton1Click:Connect(function()
     AutoFarm_Enabled = not AutoFarm_Enabled
-    ToggleBtn.Text = AutoFarm_Enabled and "ĐANG FARM..." or "BẮT ĐẦU FARM"
-    ToggleBtn.BackgroundColor3 = AutoFarm_Enabled and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 100)
+    FarmBtn.Text = AutoFarm_Enabled and "TẮT FARM" or "BẬT FARM"
+    FarmBtn.BackgroundColor3 = AutoFarm_Enabled and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 120, 200)
 end)
 
-SelectBtn.MouseButton1Click:Connect(function()
-    -- Logic xoay vòng danh sách quái để chọn
-    if Selected_Level_Farm == "Bandit" then Selected_Level_Farm = "Monkey"
-    elseif Selected_Level_Farm == "Monkey" then Selected_Level_Farm = "Gorilla"
-    else Selected_Level_Farm = "Bandit" end
-    SelectBtn.Text = "Chọn Quái: " .. Selected_Level_Farm
-end)
-
--- Phím M ẩn/hiện
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.M then
-        MainFrame.Visible = not MainFrame.Visible
-    end
-end)
-
-print("Script yutakjin V2 Loaded!")
+print("yutakjin V3 Loaded!")
