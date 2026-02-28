@@ -1,5 +1,6 @@
--- Tác giả: yutakjin
--- Phiên bản: V11 (Smooth Fly + Auto Quest + Gom Quái + ESP + 3 Nút Sea + Check 2000+ + AUTO CHUYỂN SEA)
+-- Tác giả: yutakjin --
+-- Phiên bản: V12 --
+-- đừng soi nhé:)) --
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -11,6 +12,7 @@ local TeleportService = game:GetService("TeleportService")
 
 local LocalPlayer = Players.LocalPlayer
 _G.AutoFarm = false
+_G.AutoChest = false -- Tính năng rương mới
 _G.BringMobs = false
 _G.MonsterESP = false
 _G.FruitESP = false
@@ -20,7 +22,7 @@ local function SmoothFly(targetCFrame)
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
     local root = LocalPlayer.Character.HumanoidRootPart
     local distance = (root.Position - targetCFrame.Position).Magnitude
-    local speed = 300
+    local speed = 300 -- Tốc độ cao
     local info = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
     local tween = TweenService:Create(root, info, {CFrame = targetCFrame})
     tween:Play()
@@ -51,21 +53,17 @@ local function GetCurrentQuest()
     
     -- TỰ ĐỘNG CHUYỂN SEA NẾU ĐỦ LEVEL (Logic chất lượng)
     if lvl >= 700 and _G.SelectedSea == "Sea1" then
-        -- Quay lại đảo tù nhận nhiệm vụ Ice Admiral
         return {Level = 700, NPC = "Military Detective", QName = "IceAdmiral", QID = 1, Enemy = "Ice Admiral", Spawn = CFrame.new(-5000, 30, 3500)}
     end
     if lvl >= 1500 and _G.SelectedSea == "Sea2" then
-        -- Quay lại đảo cổ đại nhận nhiệm vụ Don Swan
         return {Level = 1500, NPC = "King Red Head", QName = "DonSwan", QID = 1, Enemy = "Don Swan", Spawn = CFrame.new(100, 30, 100)}
     end
     
-    -- NẾU LEVEL > 2000 VÀ ĐANG Ở SEA 1, FARM CON MẠNH NHẤT SEA 1
     local seaData = QuestLocations[_G.SelectedSea]
     if lvl >= 2000 and _G.SelectedSea == "Sea1" then
         return seaData[#seaData]
     end
     
-    -- CHECK THEO MỐC LEVEL TRONG SEA
     local bestQuest = seaData[1]
     for _, q in pairs(seaData) do
         if lvl >= q.Level then
@@ -75,6 +73,7 @@ local function GetCurrentQuest()
     return bestQuest
 end
 
+-- [[ HÀM HỖ TRỢ ]] --
 local function GetNPC(npcName)
     for _, v in pairs(Workspace:GetChildren()) do
         if v:IsA("Model") and v.Name == npcName then return v end
@@ -94,13 +93,28 @@ local function AutoClick()
     VirtualUser:Button1Down(Vector2.new(1280, 672))
 end
 
+-- [[ TÍNH NĂNG RƯƠNG NHANH ]] --
+local function GetClosestChest()
+    local closest, minDistance = nil, math.huge
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("TouchTransmitter") and v.Parent.Name:find("Chest") then
+            local distance = (v.Parent.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if distance < minDistance then
+                closest = v.Parent
+                minDistance = distance
+            end
+        end
+    end
+    return closest
+end
+
 -- [[ VÒNG LẶP CHÍNH ]] --
 RunService.Stepped:Connect(function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local root = LocalPlayer.Character.HumanoidRootPart
         
         -- NoClip
-        if _G.AutoFarm or _G.BringMobs then
+        if _G.AutoFarm or _G.AutoChest or _G.BringMobs then
             for _, part in pairs(LocalPlayer.Character:GetChildren()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
@@ -117,13 +131,13 @@ RunService.Stepped:Connect(function()
         end
 
         -- LOGIC AUTO FARM (BAY MƯỢT)
-        if _G.AutoFarm then
+        if _G.AutoFarm and not _G.AutoChest then
             local currentQuest = GetCurrentQuest()
             
             if not LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") then
                 local npc = GetNPC(currentQuest.NPC)
                 if npc then
-                    SmoothFly(npc.HumanoidRootPart.CFrame)
+                    SmoothFly(npc.HumanoidRootPart.CFrame) -- MƯỢT!
                     task.wait(0.5)
                     ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", currentQuest.QName, currentQuest.QID)
                     task.wait(0.5)
@@ -134,7 +148,7 @@ RunService.Stepped:Connect(function()
                 local enemy = GetEnemy(currentQuest.Enemy)
                 if enemy then
                     if not _G.BringMobs then
-                        SmoothFly(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0))
+                        SmoothFly(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)) -- MƯỢT!
                     end
                     AutoClick()
                 else
@@ -142,11 +156,23 @@ RunService.Stepped:Connect(function()
                 end
             end
         end
+
+        -- LOGIC NHẶT RƯƠNG NHANH
+        if _G.AutoChest then
+            local chest = GetClosestChest()
+            if chest then
+                root.CFrame = chest.CFrame -- NHANH!
+                task.wait(0.1)
+            else
+                -- Server Hop nếu hết rương
+                print("Hết rương, Server Hop!")
+                -- Lệnh Hop sẽ nằm ở đây
+            end
+        end
     end
 end)
 
 -- [[ ESP & GIAO DIỆN ]] --
--- ESP Quái
 RunService.RenderStepped:Connect(function()
     if _G.MonsterESP then
         for _, v in pairs(Workspace.Enemies:GetChildren()) do
@@ -176,7 +202,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- ESP Trái
     if _G.FruitESP then
         for _, v in pairs(Workspace:GetChildren()) do
             if v:IsA("Model") and v.Name:find("Fruit") and v:FindFirstChild("Handle") then
@@ -217,7 +242,7 @@ Bubble.Draggable = true
 Instance.new("UICorner", Bubble).CornerRadius = Enum.CornerRadius.new(1, 0)
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 180, 0, 420)
+Main.Size = UDim2.new(0, 180, 0, 470) -- Tăng chiều cao
 Main.Position = UDim2.new(0, 75, 0, 150)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Main.Visible = false
@@ -229,7 +254,7 @@ Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 35)
-Title.Text = "yutakjin V11"
+Title.Text = "yutakjin V12"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 
@@ -245,6 +270,7 @@ end
 
 -- Nút chức năng
 local FarmBtn = CreateBtn("AUTO FARM: TẮT", Color3.fromRGB(200, 50, 50))
+local ChestBtn = CreateBtn("AUTO RƯƠNG: TẮT", Color3.fromRGB(70, 70, 70))
 local BringBtn = CreateBtn("GOM QUÁI: TẮT", Color3.fromRGB(150, 0, 200))
 local MonsterESPBtn = CreateBtn("ESP QUÁI: TẮT", Color3.fromRGB(70, 70, 70))
 local ESPBtn = CreateBtn("ESP TRÁI: TẮT", Color3.fromRGB(70, 70, 70))
@@ -267,6 +293,13 @@ FarmBtn.MouseButton1Click:Connect(function()
     _G.AutoFarm = not _G.AutoFarm
     FarmBtn.Text = _G.AutoFarm and "AUTO FARM: BẬT" or "AUTO FARM: TẮT"
     FarmBtn.BackgroundColor3 = _G.AutoFarm and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(200, 50, 50)
+    if _G.AutoFarm then _G.AutoChest = false; ChestBtn.Text = "AUTO RƯƠNG: TẮT"; ChestBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70) end
+end)
+ChestBtn.MouseButton1Click:Connect(function()
+    _G.AutoChest = not _G.AutoChest
+    ChestBtn.Text = _G.AutoChest and "AUTO RƯƠNG: BẬT" or "AUTO RƯƠNG: TẮT"
+    ChestBtn.BackgroundColor3 = _G.AutoChest and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(70, 70, 70)
+    if _G.AutoChest then _G.AutoFarm = false; FarmBtn.Text = "AUTO FARM: TẮT"; FarmBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) end
 end)
 BringBtn.MouseButton1Click:Connect(function()
     _G.BringMobs = not _G.BringMobs
@@ -298,4 +331,4 @@ Sea3Btn.MouseButton1Click:Connect(function()
     SeaLabel.Text = "Sea Chọn: Sea3"
 end)
 
-print("yutakjin V11 Loaded! Auto Chuyển Sea Quality!")
+print("yutakjin V12 Loaded! Smooth Transitions + Fast Chest!")
