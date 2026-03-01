@@ -1,6 +1,5 @@
 -- Tác giả: yutakjin
--- Phiên bản: V12 Fix v4 (Siêu tối ưu cho Executor lỗi)
--- soi làm đell j --
+-- Phiên bản: V12 - Ultimate Edition (Siêu mượt, Di chuyển được)
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -8,8 +7,10 @@ local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 _G.AutoFarm = false
 _G.AutoChest = false 
@@ -169,7 +170,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- [[ ESP & GIAO DIỆN SIÊU CẤP ]] --
+-- [[ ESP ]] --
 RunService.RenderStepped:Connect(function()
     if _G.MonsterESP then
         for _, v in pairs(Workspace.Enemies:GetChildren()) do
@@ -228,111 +229,98 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Giao diện chiêu cuối V4
+-- Giao diện Ultimate Edition - Di chuyển được bằng tay
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "yutakjin_GUI"
-ScreenGui.Parent = game.CoreGui -- Thử lại với CoreGui nếu v3 chưa được
+ScreenGui.Parent = PlayerGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Enabled = true 
 
-local Bubble = Instance.new("TextButton", ScreenGui) -- Dùng TextButton thay vì ImageButton cho chắc
-Bubble.Size = UDim2.new(0, 60, 0, 60)
-Bubble.Position = UDim2.new(0, 15, 0, 150)
-Bubble.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Nút đỏ to
-Bubble.Text = "YUTAK"
-Bubble.TextSize = 12
-Bubble.TextColor3 = Color3.fromRGB(255, 255, 255)
-Instance.new("UICorner", Bubble).CornerRadius = Enum.CornerRadius.new(1, 0)
+-- Nút Tắt/Mở Menu (Di chuyển được)
+local ToggleBtn = Instance.new("TextButton", ScreenGui)
+ToggleBtn.Name = "ToggleBtn"
+ToggleBtn.Size = UDim2.new(0, 60, 0, 60)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 150)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Nút đỏ
+ToggleBtn.Text = "MENU"
+ToggleBtn.TextSize = 12
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Draggable = true -- Bật tính năng di chuyển nút
+Instance.new("UICorner", ToggleBtn)
 
+-- Khung Menu chính
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 180, 0, 470)
-Main.Position = UDim2.new(0, 85, 0, 150)
-Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Main.Visible = false 
+Main.Name = "MainFrame"
+Main.Size = UDim2.new(0, 170, 0, 350)
+Main.Position = UDim2.new(0, 80, 0, 150)
+Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Main.BackgroundTransparency = 0.2
+Main.Visible = false -- Mặc định ẩn
+Main.Draggable = true -- Bật di chuyển khung menu
 Instance.new("UICorner", Main)
 
 local Layout = Instance.new("UIListLayout", Main)
 Layout.Padding = UDim.new(0, 5)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+Layout.VerticalAlignment = Enum.VerticalAlignment.Top
 
+-- Tiêu đề Menu
 local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 35)
-Title.Text = "yutakjin V12"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-Instance.new("UICorner", Title)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "YUTAKJIN V12"
+Title.TextSize = 14
+Title.Font = Enum.Font.SourceSansBold
+Title.TextColor3 = Color3.fromRGB(255, 215, 0) -- Màu vàng
+Title.BackgroundTransparency = 1
 
 local function CreateBtn(text, color)
     local btn = Instance.new("TextButton", Main)
-    btn.Size = UDim2.new(0.9, 0, 0, 35)
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
     btn.Text = text
     btn.BackgroundColor3 = color
+    btn.TextSize = 11
+    btn.Font = Enum.Font.SourceSans
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     Instance.new("UICorner", btn)
     return btn
 end
 
 -- Nút chức năng
-local FarmBtn = CreateBtn("AUTO FARM: TẮT", Color3.fromRGB(200, 50, 50))
-local ChestBtn = CreateBtn("AUTO RƯƠNG: TẮT", Color3.fromRGB(70, 70, 70))
-local BringBtn = CreateBtn("GOM QUÁI: TẮT", Color3.fromRGB(150, 0, 200))
-local MonsterESPBtn = CreateBtn("ESP QUÁI: TẮT", Color3.fromRGB(70, 70, 70))
-local ESPBtn = CreateBtn("ESP TRÁI: TẮT", Color3.fromRGB(70, 70, 70))
+local FarmBtn = CreateBtn("AUTO FARM: OFF", Color3.fromRGB(180, 0, 0))
+local ChestBtn = CreateBtn("AUTO CHEST: OFF", Color3.fromRGB(50, 50, 50))
+local BringBtn = CreateBtn("BRING MOBS: OFF", Color3.fromRGB(120, 0, 160))
+local MonsterESPBtn = CreateBtn("ESP MOBS: OFF", Color3.fromRGB(50, 50, 50))
+local ESPBtn = CreateBtn("ESP FRUIT: OFF", Color3.fromRGB(50, 50, 50))
 
-local SeaLabel = Instance.new("TextLabel", Main)
-SeaLabel.Size = UDim2.new(1, 0, 0, 30)
-SeaLabel.Text = "Sea Chọn: " .. _G.SelectedSea
-SeaLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-SeaLabel.BackgroundTransparency = 1
-
-local Sea1Btn = CreateBtn("SEA 1", Color3.fromRGB(0, 100, 200))
-local Sea2Btn = CreateBtn("SEA 2", Color3.fromRGB(0, 100, 200))
-local Sea3Btn = CreateBtn("SEA 3", Color3.fromRGB(0, 100, 200))
-
--- [[ SỰ KIỆN CHIÊU CUỐI V4 ]] --
-Bubble.MouseButton1Click:Connect(function() 
+-- [[ SỰ KIỆN NÚT BẤM ]] --
+ToggleBtn.MouseButton1Click:Connect(function() 
     Main.Visible = not Main.Visible 
 end)
 
 FarmBtn.MouseButton1Click:Connect(function()
     _G.AutoFarm = not _G.AutoFarm
-    FarmBtn.Text = _G.AutoFarm and "AUTO FARM: BẬT" or "AUTO FARM: TẮT"
-    FarmBtn.BackgroundColor3 = _G.AutoFarm and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(200, 50, 50)
-    if _G.AutoFarm then _G.AutoChest = false; ChestBtn.Text = "AUTO RƯƠNG: TẮT"; ChestBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70) end
+    FarmBtn.Text = _G.AutoFarm and "AUTO FARM: ON" or "AUTO FARM: OFF"
+    FarmBtn.BackgroundColor3 = _G.AutoFarm and Color3.fromRGB(0, 160, 0) or Color3.fromRGB(180, 0, 0)
 end)
 ChestBtn.MouseButton1Click:Connect(function()
     _G.AutoChest = not _G.AutoChest
-    ChestBtn.Text = _G.AutoChest and "AUTO RƯƠNG: BẬT" or "AUTO RƯƠNG: TẮT"
-    ChestBtn.BackgroundColor3 = _G.AutoChest and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(70, 70, 70)
-    if _G.AutoChest then _G.AutoFarm = false; FarmBtn.Text = "AUTO FARM: TẮT"; FarmBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) end
+    ChestBtn.Text = _G.AutoChest and "AUTO CHEST: ON" or "AUTO CHEST: OFF"
+    ChestBtn.BackgroundColor3 = _G.AutoChest and Color3.fromRGB(0, 160, 0) or Color3.fromRGB(50, 50, 50)
 end)
 BringBtn.MouseButton1Click:Connect(function()
     _G.BringMobs = not _G.BringMobs
-    BringBtn.Text = _G.BringMobs and "GOM QUÁI: BẬT" or "GOM QUÁI: TẮT"
-    BringBtn.BackgroundColor3 = _G.BringMobs and Color3.fromRGB(100, 0, 150) or Color3.fromRGB(150, 0, 200)
+    BringBtn.Text = _G.BringMobs and "BRING MOBS: ON" or "BRING MOBS: OFF"
+    BringBtn.BackgroundColor3 = _G.BringMobs and Color3.fromRGB(0, 160, 0) or Color3.fromRGB(120, 0, 160)
 end)
 MonsterESPBtn.MouseButton1Click:Connect(function()
     _G.MonsterESP = not _G.MonsterESP
-    MonsterESPBtn.Text = _G.MonsterESP and "ESP QUÁI: BẬT" or "ESP QUÁI: TẮT"
-    MonsterESPBtn.BackgroundColor3 = _G.MonsterESP and Color3.fromRGB(100, 100, 100) or Color3.fromRGB(70, 70, 70)
+    MonsterESPBtn.Text = _G.MonsterESP and "ESP MOBS: ON" or "ESP MOBS: OFF"
+    MonsterESPBtn.BackgroundColor3 = _G.MonsterESP and Color3.fromRGB(0, 160, 0) or Color3.fromRGB(50, 50, 50)
 end)
 ESPBtn.MouseButton1Click:Connect(function()
     _G.FruitESP = not _G.FruitESP
-    ESPBtn.Text = _G.FruitESP and "ESP TRÁI: BẬT" or "ESP TRÁI: TẮT"
-    ESPBtn.BackgroundColor3 = _G.FruitESP and Color3.fromRGB(255, 165, 0) or Color3.fromRGB(70, 70, 70)
+    ESPBtn.Text = _G.FruitESP and "ESP FRUIT: ON" or "ESP FRUIT: OFF"
+    ESPBtn.BackgroundColor3 = _G.FruitESP and Color3.fromRGB(0, 160, 0) or Color3.fromRGB(50, 50, 50)
 end)
 
-Sea1Btn.MouseButton1Click:Connect(function() 
-    _G.SelectedSea = "Sea1" 
-    SeaLabel.Text = "Sea Chọn: Sea1"
-end)
-Sea2Btn.MouseButton1Click:Connect(function() 
-    _G.SelectedSea = "Sea2" 
-    SeaLabel.Text = "Sea Chọn: Sea2"
-end)
-Sea3Btn.MouseButton1Click:Connect(function() 
-    _G.SelectedSea = "Sea3" 
-    SeaLabel.Text = "Sea Chọn: Sea3"
-end)
-
-print("yutakjin V12 Fix v4 Loaded! Red Button Version!")
+print("yutakjin V12 Ultimate Loaded!")
