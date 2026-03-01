@@ -1,5 +1,6 @@
 -- Tác giả: yutakjin
--- Phiên bản: V12 Fix v3 (Sửa lỗi Menu không hiện v3)
+-- Phiên bản: V12 Fix v4 (Siêu tối ưu cho Executor lỗi)
+-- soi làm đell j --
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -9,7 +10,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 _G.AutoFarm = false
 _G.AutoChest = false 
@@ -228,26 +228,27 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Giao diện chiêu cuối
+-- Giao diện chiêu cuối V4
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "yutakjin_GUI"
-ScreenGui.Parent = PlayerGui
+ScreenGui.Parent = game.CoreGui -- Thử lại với CoreGui nếu v3 chưa được
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Enabled = true -- Luôn hiện GUI
+ScreenGui.Enabled = true 
 
-local Bubble = Instance.new("ImageButton", ScreenGui)
-Bubble.Size = UDim2.new(0, 55, 0, 55)
+local Bubble = Instance.new("TextButton", ScreenGui) -- Dùng TextButton thay vì ImageButton cho chắc
+Bubble.Size = UDim2.new(0, 60, 0, 60)
 Bubble.Position = UDim2.new(0, 15, 0, 150)
-Bubble.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-Bubble.Image = "rbxassetid://6031280882"
-Bubble.Draggable = true
+Bubble.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Nút đỏ to
+Bubble.Text = "YUTAK"
+Bubble.TextSize = 12
+Bubble.TextColor3 = Color3.fromRGB(255, 255, 255)
 Instance.new("UICorner", Bubble).CornerRadius = Enum.CornerRadius.new(1, 0)
 
 local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 180, 0, 470)
-Main.Position = UDim2.new(0, 75, 0, 150)
+Main.Position = UDim2.new(0, 85, 0, 150)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Main.Visible = false -- Menu ẩn mặc định
+Main.Visible = false 
 Instance.new("UICorner", Main)
 
 local Layout = Instance.new("UIListLayout", Main)
@@ -288,16 +289,9 @@ local Sea1Btn = CreateBtn("SEA 1", Color3.fromRGB(0, 100, 200))
 local Sea2Btn = CreateBtn("SEA 2", Color3.fromRGB(0, 100, 200))
 local Sea3Btn = CreateBtn("SEA 3", Color3.fromRGB(0, 100, 200))
 
--- [[ SỰ KIỆN CHIÊU CUỐI ]] --
+-- [[ SỰ KIỆN CHIÊU CUỐI V4 ]] --
 Bubble.MouseButton1Click:Connect(function() 
     Main.Visible = not Main.Visible 
-end)
-
--- Sử dụng sự kiện thay thế nếu Click không hoạt động
-Bubble.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        Main.Visible = not Main.Visible
-    end
 end)
 
 FarmBtn.MouseButton1Click:Connect(function()
@@ -341,4 +335,4 @@ Sea3Btn.MouseButton1Click:Connect(function()
     SeaLabel.Text = "Sea Chọn: Sea3"
 end)
 
-print("yutakjin V12 Fix v3 Loaded! Ultimate GUI Loaded!")
+print("yutakjin V12 Fix v4 Loaded! Red Button Version!")
