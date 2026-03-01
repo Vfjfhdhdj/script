@@ -1,6 +1,5 @@
--- Tác giả: yutakjin --
--- Phiên bản: V12 --
--- đừng soi nhé:)) --
+-- Tác giả: yutakjin
+-- Phiên bản: V12 Fix (Menu hoạt động ổn định)
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -12,7 +11,7 @@ local TeleportService = game:GetService("TeleportService")
 
 local LocalPlayer = Players.LocalPlayer
 _G.AutoFarm = false
-_G.AutoChest = false -- Tính năng rương mới
+_G.AutoChest = false 
 _G.BringMobs = false
 _G.MonsterESP = false
 _G.FruitESP = false
@@ -22,7 +21,7 @@ local function SmoothFly(targetCFrame)
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
     local root = LocalPlayer.Character.HumanoidRootPart
     local distance = (root.Position - targetCFrame.Position).Magnitude
-    local speed = 300 -- Tốc độ cao
+    local speed = 300 
     local info = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
     local tween = TweenService:Create(root, info, {CFrame = targetCFrame})
     tween:Play()
@@ -51,7 +50,6 @@ _G.SelectedSea = "Sea1"
 local function GetCurrentQuest()
     local lvl = LocalPlayer.Data.Level.Value
     
-    -- TỰ ĐỘNG CHUYỂN SEA NẾU ĐỦ LEVEL (Logic chất lượng)
     if lvl >= 700 and _G.SelectedSea == "Sea1" then
         return {Level = 700, NPC = "Military Detective", QName = "IceAdmiral", QID = 1, Enemy = "Ice Admiral", Spawn = CFrame.new(-5000, 30, 3500)}
     end
@@ -137,7 +135,7 @@ RunService.Stepped:Connect(function()
             if not LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") then
                 local npc = GetNPC(currentQuest.NPC)
                 if npc then
-                    SmoothFly(npc.HumanoidRootPart.CFrame) -- MƯỢT!
+                    SmoothFly(npc.HumanoidRootPart.CFrame)
                     task.wait(0.5)
                     ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", currentQuest.QName, currentQuest.QID)
                     task.wait(0.5)
@@ -148,7 +146,7 @@ RunService.Stepped:Connect(function()
                 local enemy = GetEnemy(currentQuest.Enemy)
                 if enemy then
                     if not _G.BringMobs then
-                        SmoothFly(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)) -- MƯỢT!
+                        SmoothFly(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0))
                     end
                     AutoClick()
                 else
@@ -161,18 +159,16 @@ RunService.Stepped:Connect(function()
         if _G.AutoChest then
             local chest = GetClosestChest()
             if chest then
-                root.CFrame = chest.CFrame -- NHANH!
+                root.CFrame = chest.CFrame
                 task.wait(0.1)
             else
-                -- Server Hop nếu hết rương
                 print("Hết rương, Server Hop!")
-                -- Lệnh Hop sẽ nằm ở đây
             end
         end
     end
 end)
 
--- [[ ESP & GIAO DIỆN ]] --
+-- [[ ESP & GIAO DIỆN FIX ]] --
 RunService.RenderStepped:Connect(function()
     if _G.MonsterESP then
         for _, v in pairs(Workspace.Enemies:GetChildren()) do
@@ -231,8 +227,11 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Giao diện
+-- Giao diện được sửa lỗi
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "yutakjin_GUI"
+ScreenGui.ResetOnSpawn = false
+
 local Bubble = Instance.new("ImageButton", ScreenGui)
 Bubble.Size = UDim2.new(0, 55, 0, 55)
 Bubble.Position = UDim2.new(0, 15, 0, 150)
@@ -242,7 +241,7 @@ Bubble.Draggable = true
 Instance.new("UICorner", Bubble).CornerRadius = Enum.CornerRadius.new(1, 0)
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 180, 0, 470) -- Tăng chiều cao
+Main.Size = UDim2.new(0, 180, 0, 470)
 Main.Position = UDim2.new(0, 75, 0, 150)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Main.Visible = false
@@ -257,6 +256,7 @@ Title.Size = UDim2.new(1, 0, 0, 35)
 Title.Text = "yutakjin V12"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Instance.new("UICorner", Title)
 
 local function CreateBtn(text, color)
     local btn = Instance.new("TextButton", Main)
@@ -275,20 +275,21 @@ local BringBtn = CreateBtn("GOM QUÁI: TẮT", Color3.fromRGB(150, 0, 200))
 local MonsterESPBtn = CreateBtn("ESP QUÁI: TẮT", Color3.fromRGB(70, 70, 70))
 local ESPBtn = CreateBtn("ESP TRÁI: TẮT", Color3.fromRGB(70, 70, 70))
 
--- Dòng chữ Sea hiện tại
 local SeaLabel = Instance.new("TextLabel", Main)
 SeaLabel.Size = UDim2.new(1, 0, 0, 30)
 SeaLabel.Text = "Sea Chọn: " .. _G.SelectedSea
 SeaLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 SeaLabel.BackgroundTransparency = 1
 
--- Nút Sea
 local Sea1Btn = CreateBtn("SEA 1", Color3.fromRGB(0, 100, 200))
 local Sea2Btn = CreateBtn("SEA 2", Color3.fromRGB(0, 100, 200))
 local Sea3Btn = CreateBtn("SEA 3", Color3.fromRGB(0, 100, 200))
 
 -- [[ SỰ KIỆN ]] --
-Bubble.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+Bubble.MouseButton1Click:Connect(function() 
+    Main.Visible = not Main.Visible 
+end)
+
 FarmBtn.MouseButton1Click:Connect(function()
     _G.AutoFarm = not _G.AutoFarm
     FarmBtn.Text = _G.AutoFarm and "AUTO FARM: BẬT" or "AUTO FARM: TẮT"
@@ -317,7 +318,6 @@ ESPBtn.MouseButton1Click:Connect(function()
     ESPBtn.BackgroundColor3 = _G.FruitESP and Color3.fromRGB(255, 165, 0) or Color3.fromRGB(70, 70, 70)
 end)
 
--- Sự kiện nút Sea
 Sea1Btn.MouseButton1Click:Connect(function() 
     _G.SelectedSea = "Sea1" 
     SeaLabel.Text = "Sea Chọn: Sea1"
@@ -331,4 +331,4 @@ Sea3Btn.MouseButton1Click:Connect(function()
     SeaLabel.Text = "Sea Chọn: Sea3"
 end)
 
-print("yutakjin V12 Loaded! Smooth Transitions + Fast Chest!")
+print("yutakjin V12 Fix Loaded! Menu should work now!")
