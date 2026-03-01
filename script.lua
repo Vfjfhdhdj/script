@@ -1,5 +1,5 @@
 -- Tác giả: yutakjin
--- Phiên bản: V12 Fix (Menu hoạt động ổn định)
+-- Phiên bản: V12 Fix v2 (Giao diện chạy trong PlayerGui)
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -7,9 +7,10 @@ local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-local TeleportService = game:GetService("TeleportService")
 
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
 _G.AutoFarm = false
 _G.AutoChest = false 
 _G.BringMobs = false
@@ -168,7 +169,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- [[ ESP & GIAO DIỆN FIX ]] --
+-- [[ ESP & GIAO DIỆN MỚI ]] --
 RunService.RenderStepped:Connect(function()
     if _G.MonsterESP then
         for _, v in pairs(Workspace.Enemies:GetChildren()) do
@@ -227,9 +228,10 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Giao diện được sửa lỗi
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+-- Giao diện chạy trong PlayerGui (An toàn hơn)
+local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "yutakjin_GUI"
+ScreenGui.Parent = PlayerGui
 ScreenGui.ResetOnSpawn = false
 
 local Bubble = Instance.new("ImageButton", ScreenGui)
@@ -331,4 +333,4 @@ Sea3Btn.MouseButton1Click:Connect(function()
     SeaLabel.Text = "Sea Chọn: Sea3"
 end)
 
-print("yutakjin V12 Fix Loaded! Menu should work now!")
+print("yutakjin V12 Fix v2 Loaded! Check PlayerGui!")
