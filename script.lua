@@ -1,5 +1,5 @@
 -- Tác giả: yutakjin
--- Phiên bản: V12 Fix v2 (Giao diện chạy trong PlayerGui)
+-- Phiên bản: V12 Fix v3 (Sửa lỗi Menu không hiện v3)
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -169,7 +169,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- [[ ESP & GIAO DIỆN MỚI ]] --
+-- [[ ESP & GIAO DIỆN SIÊU CẤP ]] --
 RunService.RenderStepped:Connect(function()
     if _G.MonsterESP then
         for _, v in pairs(Workspace.Enemies:GetChildren()) do
@@ -228,11 +228,12 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Giao diện chạy trong PlayerGui (An toàn hơn)
+-- Giao diện chiêu cuối
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "yutakjin_GUI"
 ScreenGui.Parent = PlayerGui
 ScreenGui.ResetOnSpawn = false
+ScreenGui.Enabled = true -- Luôn hiện GUI
 
 local Bubble = Instance.new("ImageButton", ScreenGui)
 Bubble.Size = UDim2.new(0, 55, 0, 55)
@@ -246,7 +247,7 @@ local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 180, 0, 470)
 Main.Position = UDim2.new(0, 75, 0, 150)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Main.Visible = false
+Main.Visible = false -- Menu ẩn mặc định
 Instance.new("UICorner", Main)
 
 local Layout = Instance.new("UIListLayout", Main)
@@ -287,9 +288,16 @@ local Sea1Btn = CreateBtn("SEA 1", Color3.fromRGB(0, 100, 200))
 local Sea2Btn = CreateBtn("SEA 2", Color3.fromRGB(0, 100, 200))
 local Sea3Btn = CreateBtn("SEA 3", Color3.fromRGB(0, 100, 200))
 
--- [[ SỰ KIỆN ]] --
+-- [[ SỰ KIỆN CHIÊU CUỐI ]] --
 Bubble.MouseButton1Click:Connect(function() 
     Main.Visible = not Main.Visible 
+end)
+
+-- Sử dụng sự kiện thay thế nếu Click không hoạt động
+Bubble.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        Main.Visible = not Main.Visible
+    end
 end)
 
 FarmBtn.MouseButton1Click:Connect(function()
@@ -333,4 +341,4 @@ Sea3Btn.MouseButton1Click:Connect(function()
     SeaLabel.Text = "Sea Chọn: Sea3"
 end)
 
-print("yutakjin V12 Fix v2 Loaded! Check PlayerGui!")
+print("yutakjin V12 Fix v3 Loaded! Ultimate GUI Loaded!")
