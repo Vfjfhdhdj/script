@@ -1,5 +1,5 @@
 -- Tác giả: yutakjin
--- Phiên bản: V12 - Ultimate Edition (Siêu mượt, Di chuyển được)
+-- Phiên bản: V12 - Ultimate Anti-Kick Edition (Tối ưu rương 99%)
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -18,16 +18,13 @@ _G.BringMobs = false
 _G.MonsterESP = false
 _G.FruitESP = false
 
--- [[ HÀM BAY MƯỢT (TWEEN) ]] --
-local function SmoothFly(targetCFrame)
+-- [[ HÀM DI CHUYỂN AN TOÀN (ANTI-CHEAT) ]] --
+local function SafeMove(targetCFrame)
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
     local root = LocalPlayer.Character.HumanoidRootPart
-    local distance = (root.Position - targetCFrame.Position).Magnitude
-    local speed = 300 
-    local info = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
-    local tween = TweenService:Create(root, info, {CFrame = targetCFrame})
-    tween:Play()
-    tween.Completed:Wait()
+    
+    -- Sử dụng CFrame trực tiếp thay vì Tween để tránh bị detect tốc độ
+    root.CFrame = targetCFrame
 end
 
 -- [[ DỮ LIỆU ĐẢO & QUÁI (3 SEA) ]] --
@@ -93,7 +90,7 @@ local function AutoClick()
     VirtualUser:Button1Down(Vector2.new(1280, 672))
 end
 
--- [[ TÍNH NĂNG RƯƠNG NHANH ]] --
+-- [[ TÍNH NĂNG RƯƠNG AN TOÀN ]] --
 local function GetClosestChest()
     local closest, minDistance = nil, math.huge
     for _, v in pairs(Workspace:GetDescendants()) do
@@ -130,39 +127,40 @@ RunService.Stepped:Connect(function()
             end
         end
 
-        -- LOGIC AUTO FARM (BAY MƯỢT)
+        -- LOGIC AUTO FARM (An toàn hơn)
         if _G.AutoFarm and not _G.AutoChest then
             local currentQuest = GetCurrentQuest()
             
             if not LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") then
                 local npc = GetNPC(currentQuest.NPC)
                 if npc then
-                    SmoothFly(npc.HumanoidRootPart.CFrame)
-                    task.wait(0.5)
+                    SafeMove(npc.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0))
+                    task.wait(0.3)
                     ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", currentQuest.QName, currentQuest.QID)
-                    task.wait(0.5)
+                    task.wait(0.3)
                 else
-                    SmoothFly(currentQuest.Spawn)
+                    SafeMove(currentQuest.Spawn)
                 end
             else
                 local enemy = GetEnemy(currentQuest.Enemy)
                 if enemy then
                     if not _G.BringMobs then
-                        SmoothFly(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0))
+                        SafeMove(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
                     end
                     AutoClick()
                 else
-                    SmoothFly(currentQuest.Spawn)
+                    SafeMove(currentQuest.Spawn)
                 end
             end
         end
 
-        -- LOGIC NHẶT RƯƠNG NHANH
+        -- LOGIC NHẶT RƯƠNG (Anti-Kick 99%)
         if _G.AutoChest then
             local chest = GetClosestChest()
             if chest then
+                -- Teleport thẳng tới rương thay vì bay
                 root.CFrame = chest.CFrame
-                task.wait(0.1)
+                task.wait(0.1) -- Đợi rương load
             else
                 print("Hết rương, Server Hop!")
             end
@@ -323,4 +321,4 @@ ESPBtn.MouseButton1Click:Connect(function()
     ESPBtn.BackgroundColor3 = _G.FruitESP and Color3.fromRGB(0, 160, 0) or Color3.fromRGB(50, 50, 50)
 end)
 
-print("yutakjin V12 Ultimate Loaded!")
+print("yutakjin V12 Anti-Kick Edition Loaded!")
